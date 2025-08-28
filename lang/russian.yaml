@@ -1,0 +1,40 @@
+#Язык локализации который будет отображаться в меню 
+languageMain: Русский
+
+lang: Язык
+
+#Заголовок меню в котором необходимо ввести ник
+entryName: Необходимо ввестии имя под которым вас будут видеть другие пользователи
+textinput: Више имя
+
+#Главнео меню
+connectUser: Подключиться
+chatList: Чаты
+settignsList: Настройки
+
+#Список чатов
+backMain: Назад
+
+#Окно подключения 
+headerConnect: Введите ип пользователя
+
+#Панель с подсказками кнопок 
+exitButton: Ctrl+C — выход
+moveMainButton: ↑/↓ — листать список
+moveAnotherList: Tab — для перемещеня 
+
+#Кнопки в меню с чатами
+sctollMessageList: Ctrl+W / Ctrl+S — листать
+#moveListButton: ↑/↓ — листать список
+#moveAnotherList: Tab — для перемещеня 
+
+#Статусы подключения
+connectSucessful: Подключение успешно
+connecting: Подлкючение...
+connectError: Ошибка подлкючения
+connectTimeout: Подлкючение к пользовтелю заняло слишком много времени
+
+#Звонки 
+CallWith: Звонок с 
+CallFrom: Звоним
+CallTo: Звонок от 

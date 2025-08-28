@@ -1,0 +1,35 @@
+#Язык локализации который будет отображаться в меню 
+languageMain: English
+
+lang: Language
+
+#Заголовок меню в котором необходимо ввести ник
+entryName: You must enter a name under which other users will see you.
+textinput: Your nickname
+
+#Главнео меню
+connectUser: Connect
+chatList: Chats
+settignsList: Settings
+
+#Список чатов
+backMain: Back
+
+#Окно подключения 
+headerConnect: Enter IP user
+
+#Панель с подсказками кнопок 
+exitButton: Ctrl+C — exit
+moveMainButton: ↑/↓ — sctoll list
+moveAnotherList: Tab — for moving
+
+#Кнопки в меню с чатами
+sctollMessageList: Ctrl+W / Ctrl+S — scroll
+#moveListButton: ↑/↓ — листать список
+#moveAnotherList: Tab — для перемещеня 
+
+connectSucessful: Sucessful connect
+connecting: Connecting...
+connectError: Connecting error
+connectTimeout: Timeout connecting error
+
