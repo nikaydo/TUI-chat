@@ -8,26 +8,14 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 )
 
-// Сообщения из пакетов в update bubbletea
-type ServerMsg struct {
-	Conn    net.Conn
-	Service ServiceMsg
-	Msg     string
-}
-
-type ServiceMsg struct {
-	Type string
-	Msg  string
-}
-
 type UserMessage struct {
 	Message     string
 	IsHandShake bool
-}
-
-func (s *ServiceMsg) SetValue(msg, service string) {
-	s.Msg = msg
-	s.Type = service
+	IsCall      bool
+	//0 - Call
+	//1 - Accept
+	//2 - End call or decline
+	CallStatus int
 }
 
 // Структура звонка

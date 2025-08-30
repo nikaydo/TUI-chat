@@ -11,7 +11,7 @@ func (m *Model) chatCalls(key string) tea.Model {
 	case "ctrl+f":
 		if !m.Call.InCall && !m.Call.FromCall && !m.Call.ToCall {
 			if conn := getConn(m); conn != nil {
-				m.Peer.Tcp.SendMsg(conn.Conn, "call", "call")
+				m.Peer.Tcp.SendMsg(conn.Conn, models.UserMessage{CallStatus: 0, IsCall: true})
 				changeCall(m, "to")
 				m.Call.Conn = conn.Conn
 				m.Call.Name = conn.UserName
@@ -20,24 +20,24 @@ func (m *Model) chatCalls(key string) tea.Model {
 		return m
 	case "ctrl+y":
 		if m.Call.FromCall {
-			m.Peer.Tcp.SendMsg(m.Call.Conn, "accept", "call")
+			m.Peer.Tcp.SendMsg(m.Call.Conn, models.UserMessage{CallStatus: 1, IsCall: true})
 			changeCall(m, "in")
 		}
 		return m
 	case "ctrl+n":
-		m.Peer.Tcp.SendMsg(m.Call.Conn, "decline", "call")
+		m.Peer.Tcp.SendMsg(m.Call.Conn, models.UserMessage{CallStatus: 2, IsCall: true})
 		changeCall(m, "")
 		m.Call.Name = ""
 	}
 	return m
 }
 
-func (m *Model) commandCalls(msg models.ServerMsg) tea.Model {
-	switch msg.Service.Msg {
-	case "call":
+func (m *Model) commandCalls(msg models.CallAction) tea.Model {
+	switch msg.CallStatus {
+	case 0:
 		m.setCall(msg, "get", true)
 		return m
-	case "accept":
+	case 1:
 		m.setCall(msg, "in", true)
 		return m
 	default:
@@ -46,7 +46,7 @@ func (m *Model) commandCalls(msg models.ServerMsg) tea.Model {
 	}
 }
 
-func (m *Model) setCall(msg models.ServerMsg, CallType string, Conn bool) {
+func (m *Model) setCall(msg models.CallAction, CallType string, Conn bool) {
 	if User := m.getConnByAddr(msg.Conn.RemoteAddr()); User != nil {
 		m = changeCall(m, CallType)
 		m.Call.Name = User.UserName

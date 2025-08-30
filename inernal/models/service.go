@@ -2,7 +2,7 @@ package models
 
 import "net"
 
-type ServiceMsgg interface {
+type ServiceMsg interface {
 	isServiceMsg()
 }
 
@@ -33,4 +33,8 @@ func (s Message) isServiceMsg() {}
 type Payload struct {
 	Conn net.Conn
 	Data string
+	//0 - Call
+	//1 - Accept
+	//2 - End call or decline
+	CallStatus int
 }

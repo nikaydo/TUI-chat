@@ -12,42 +12,9 @@ import (
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
-	case models.ServiceMsgg:
+	case models.ServiceMsg:
 		m, cmd := m.ServiceMessage(msg)
 		return m, cmd
-	case models.ServerMsg:
-		switch msg.Service.Type {
-		case "HandServer":
-			if UserConnection := m.getConnByAddr(msg.Conn.RemoteAddr()); UserConnection != nil {
-				UserConnection.UserName = msg.Service.Msg
-				cmd = m.ConnList.InsertItem(UserConnection.Id, models.Item{Name: UserConnection.UserName})
-				return m, cmd
-			}
-		case "PrepareUser":
-			UserInit(&msg.Conn, m)
-			return m, cmd
-		case "ConnTimeout":
-			m.UserConnect.Header = textColor(msg.Service.Msg, "#b82424ff")
-			return m, nil
-		case "call":
-			md := m.commandCalls(msg)
-			return md, nil
-		case "Message":
-			if UserConnection := m.getConnByAddr(msg.Conn.RemoteAddr()); UserConnection != nil {
-				UserConnection.UnReadMsg += 1
-				wrappedMsg := wrapMessage(splitText(UserConnection.UserName, msg.Service.Msg, UserConnection.ViewPort.Width), UserConnection.ViewPort.Width)
-				UserConnection.Msg = append(UserConnection.Msg, textColor(wrappedMsg, "#ac7cb9ff"))
-				UserConnection.ViewPort.SetContent(strings.Join(UserConnection.Msg, "\n"))
-				UserConnection.ViewPort.GotoBottom()
-				if m.ConnList.Cursor() != UserConnection.Id-1 {
-					cmd = m.ConnList.SetItem(UserConnection.Id-1, models.Item{Name: fmt.Sprintf("%s [%d]", UserConnection.UserName, UserConnection.UnReadMsg)})
-					return m, cmd
-				}
-				UserConnection.UnReadMsg = 0
-				cmd = m.ConnList.SetItem(UserConnection.Id-1, models.Item{Name: UserConnection.UserName})
-			}
-			return m, cmd
-		}
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "tab":
@@ -98,7 +65,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				wrappedMsg := wrapMessage(splitText(*m.Username, conn.TextInput.Value(), conn.ViewPort.Width), conn.ViewPort.Width)
 				conn.Msg = append(conn.Msg, textColor(wrappedMsg, "#9e6354ff"))
 				conn.ViewPort.SetContent(strings.Join(conn.Msg, "\n"))
-				m.Peer.Tcp.SendMsg(conn.Conn, conn.TextInput.Value(), "")
+				m.Peer.Tcp.SendMsg(conn.Conn, models.UserMessage{Message: conn.TextInput.Value()})
 				conn.TextInput.Reset()
 				conn.ViewPort.GotoBottom()
 			}
@@ -128,7 +95,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			//scroll down message list
-		case "ctrl+s":
+		case tea.KeyCtrlS.String():
 			switch m.Screen {
 			case ConnectIdx:
 				if conn := getConn(m); conn != nil {
@@ -147,7 +114,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return check(m, msg)
 }
 
-func (m *Model) ServiceMessage(msg models.ServiceMsgg) (tea.Model, tea.Cmd) {
+func (m *Model) ServiceMessage(msg models.ServiceMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case models.HandShake:
@@ -163,10 +130,10 @@ func (m *Model) ServiceMessage(msg models.ServiceMsgg) (tea.Model, tea.Cmd) {
 		m.UserConnect.Header = textColor(msg.Data, "#b82424ff")
 		return m, nil
 	case models.CallAction:
-		//	md := m.commandCalls(msg)
-		//return md, nil
+		md := m.commandCalls(msg)
+		return md, nil
 	case models.TimerCount:
-		fmt.Println()
+
 	case models.Message:
 		if UserConnection := m.getConnByAddr(msg.Conn.RemoteAddr()); UserConnection != nil {
 			UserConnection.UnReadMsg += 1

@@ -29,18 +29,24 @@ func (t *Tcp) Connect(addr string) (*net.Conn, error) {
 	if err != nil {
 		return &conn, err
 	}
-
-	f := func(conn *net.Conn, msg models.ServerMsg) {
-		t.Programm.Send(msg)
+	f := func(conn *net.Conn, msg models.UserMessage) {
+		asd := models.Message{Conn: *conn, Data: msg.Message}
+		if msg.IsHandShake {
+			t.Programm.Send(models.HandShake{Conn: *conn, Data: msg.Message})
+			return
+		}
+		if msg.IsCall {
+			t.Programm.Send(models.CallAction{Conn: *conn, CallStatus: msg.CallStatus})
+			return
+		}
+		t.Programm.Send(asd)
 	}
-
 	go t.handleRequest(&conn, f)
 	return &conn, err
 }
 
-func (t *Tcp) SendMsg(c *net.Conn, text, service string) {
+func (t *Tcp) SendMsg(c *net.Conn, msg models.UserMessage) {
 	conn := *c
-	msg := models.ServiceMsg{Type: service, Msg: text}
 	b, err := json.Marshal(msg)
 	if err != nil {
 		fmt.Println("error marshaling message", err.Error())
@@ -64,38 +70,34 @@ func (t *Tcp) RunServers() {
 				fmt.Println("Error listening:", err.Error())
 				return
 			}
-
-			t.Programm.Send(models.ServerMsg{Conn: conn, Service: models.ServiceMsg{Type: "PrepareUser"}})
-
-			f := func(conn *net.Conn, msg models.ServerMsg) {
-				if msg.Service.Type == "HandServer" {
-					t.SendMsg(conn, *t.Name, "HandServer")
+			t.Programm.Send(models.PrepareUser{Conn: conn})
+			f := func(conn *net.Conn, msg models.UserMessage) {
+				if msg.IsHandShake {
+					asd := models.UserMessage{Message: *t.Name, IsHandShake: true}
+					t.SendMsg(conn, asd)
+					t.Programm.Send(models.HandShake{Conn: *conn, Data: msg.Message})
+					return
 				}
-
-				t.Programm.Send(msg)
-
-				t.Programm.Send(models.TimerCount{Data: *t.Name})
+				if msg.IsCall {
+					t.Programm.Send(models.CallAction{Conn: *conn, CallStatus: msg.CallStatus})
+					return
+				}
+				t.Programm.Send(models.Message{Conn: *conn, Data: msg.Message})
 			}
 			go t.handleRequest(&conn, f)
 		}
 	}()
 }
 
-func (t *Tcp) handleRequest(conn *net.Conn, f func(conn *net.Conn, msg models.ServerMsg)) {
+func (t *Tcp) handleRequest(conn *net.Conn, f func(conn *net.Conn, msg models.UserMessage)) {
 	scanner := bufio.NewScanner(*conn)
-	msg := models.ServerMsg{Conn: *conn}
 	for scanner.Scan() {
-		var s models.ServiceMsg
+		var s models.UserMessage
 		err := json.Unmarshal(scanner.Bytes(), &s)
 		if err != nil {
 			fmt.Println("error unmarshaling message")
 			return
 		}
-		msg.Service = s
-		if msg.Service.Type == "" {
-			msg.Service.Type = "Message"
-		}
-		f(conn, msg)
+		f(conn, s)
 	}
-
 }

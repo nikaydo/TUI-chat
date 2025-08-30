@@ -69,23 +69,21 @@ func UserInit(c *net.Conn, m *Model) {
 }
 
 func ConnectUser(m *Model) {
-	msg := models.ServerMsg{}
 	c, err := m.Peer.Tcp.Connect(m.UserConnect.TextInput.Value())
 	if err != nil {
 		if strings.Contains(err.Error(), "i/o timeout") {
-			msg.Service.SetValue(m.Language.SelectedLang.ConnectTimeout, "ConnTimeout")
+			msg := models.ConnTimeout{Data: m.Language.SelectedLang.ConnectTimeout}
 			m.Program.Send(msg)
 			return
 		}
-		msg.Service.SetValue(m.Language.SelectedLang.ConnectError, "ConnTimeout")
+		msg := models.ConnTimeout{Data: m.Language.SelectedLang.ConnectError}
 		m.Program.Send(msg)
 		return
 	}
 	UserInit(c, m)
 
-	m.Peer.Tcp.SendMsg(c, *m.Username, "HandServer")
-
-	msg.Service.SetValue(textColor(m.Language.SelectedLang.ConnectSucessful, "#0d881dff"), "ConnTimeout")
+	m.Peer.Tcp.SendMsg(c, models.UserMessage{Message: *m.Username, IsHandShake: true})
+	msg := models.ConnTimeout{Data: textColor(m.Language.SelectedLang.ConnectSucessful, "#0d881dff")}
 	m.Program.Send(msg)
 }
 
