@@ -36,5 +36,7 @@ connectTimeout: Подлкючение к пользовтелю заняло с
 
 #Звонки 
 CallWith: Звонок с 
-CallFrom: Звоним
-CallTo: Звонок от 
+CallFrom: "Звоним:"
+CallTo: Звонок от  
+CallEnd: "Закончить:"
+CallCancel: "Отклонить:"

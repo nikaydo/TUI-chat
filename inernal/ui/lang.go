@@ -14,73 +14,73 @@ func (m *Model) SetupLang() {
 	m.MainList.SetItems(nil)
 
 	main := []models.Item{
-		{Name: m.SelectedLang.ConnectUser},
-		{Name: m.SelectedLang.Chats},
-		{Name: m.SelectedLang.Settings},
+		{Name: m.Language.SelectedLang.ConnectUser},
+		{Name: m.Language.SelectedLang.Chats},
+		{Name: m.Language.SelectedLang.Settings},
 	}
 	for idx, item := range main {
 		m.MainList.InsertItem(idx, item)
 	}
 
 	m.ConnList.SetItems(nil)
-	m.ConnList.InsertItem(0, models.Item{Name: m.SelectedLang.BackMain})
+	m.ConnList.InsertItem(0, models.Item{Name: m.Language.SelectedLang.BackMain})
 
 	m.SettingsList.SetItems(nil)
 
 	Setttings := []models.Item{
-		{Name: m.SelectedLang.BackMain},
-		{Name: m.SelectedLang.Lang}}
+		{Name: m.Language.SelectedLang.BackMain},
+		{Name: m.Language.SelectedLang.Lang}}
 
 	for idx, item := range Setttings {
 		m.SettingsList.InsertItem(idx, item)
 	}
-
-	m.Hello.TextInput.Placeholder = m.SelectedLang.EntryInput
+	m.UserConnect.Header = m.Language.SelectedLang.HeaderConnect
+	m.TextInput.Placeholder = m.Language.SelectedLang.EntryInput
 }
 
 func (m *Model) LangInit() {
-	for _, i := range m.Language {
-		m.Langs = append(m.Langs, i.Language)
+	for _, i := range m.Language.Language {
+		m.Language.Langs = append(m.Language.Langs, i.Language)
 	}
-	m.SelectedLang = m.Language[0]
+	m.Language.SelectedLang = m.Language.Language[0]
 
 	mainList := MakeList([]models.Item{
-		{Name: m.SelectedLang.ConnectUser},
-		{Name: m.SelectedLang.Chats},
-		{Name: m.SelectedLang.Settings},
+		{Name: m.Language.SelectedLang.ConnectUser},
+		{Name: m.Language.SelectedLang.Chats},
+		{Name: m.Language.SelectedLang.Settings},
 	})
-	chatList := MakeList([]models.Item{{Name: m.SelectedLang.BackMain}})
+	chatList := MakeList([]models.Item{{Name: m.Language.SelectedLang.BackMain}})
 	Settings := MakeList([]models.Item{
-		{Name: m.SelectedLang.BackMain},
-		{Name: m.SelectedLang.Lang},
+		{Name: m.Language.SelectedLang.BackMain},
+		{Name: m.Language.SelectedLang.Lang},
 	})
 	notes := []models.Item{}
 
-	for _, i := range m.Langs {
+	for _, i := range m.Language.Langs {
 		notes = append(notes, models.Item{Name: i})
 	}
 
 	LangList := MakeList(notes)
 	LangList.Title = ""
 	LangList.Styles.Title = lipgloss.Style{}
-	m.Main = models.Main{
-		MainList:     mainList,
-		ConnList:     chatList,
-		SettingsList: Settings,
-		LangList:     LangList,
-		Screen:       MainIdx,
-		Err:          false}
 
-	m.Hello.TextInput = Textinput(m.SelectedLang.EntryInput)
+	m.MainList = mainList
+	m.ConnList = chatList
+	m.SettingsList = Settings
+	m.LangList = LangList
+	m.Screen = MainIdx
+
+	m.UserConnect.Header = m.Language.SelectedLang.HeaderConnect
+	m.TextInput = Textinput(m.Language.SelectedLang.EntryInput)
 
 }
 
 func (m *Model) MakeHelpBar(bar string) string {
 	switch bar {
 	case "main":
-		return fmt.Sprintf("%s %s %s", m.SelectedLang.MoveLists, m.SelectedLang.MoveToLists, m.SelectedLang.ExitButton)
+		return fmt.Sprintf("%s %s %s", m.Language.SelectedLang.MoveLists, m.Language.SelectedLang.MoveToLists, m.Language.SelectedLang.ExitButton)
 	case "chat":
-		return fmt.Sprintf("%s %s %s", m.SelectedLang.ScrollMessage, m.SelectedLang.MoveLists, m.SelectedLang.MoveToLists)
+		return fmt.Sprintf("%s %s %s", m.Language.SelectedLang.ScrollMessage, m.Language.SelectedLang.MoveLists, m.Language.SelectedLang.MoveToLists)
 	}
 	return ""
 }

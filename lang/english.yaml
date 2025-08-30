@@ -33,3 +33,9 @@ connecting: Connecting...
 connectError: Connecting error
 connectTimeout: Timeout connecting error
 
+#Звонки 
+CallWith: Call with
+CallFrom: "Calling:"
+CallTo: Call from 
+CallEnd: "End:"
+CallCancel: "Reject:"

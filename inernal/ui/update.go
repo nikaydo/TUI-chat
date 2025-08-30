@@ -12,36 +12,39 @@ import (
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
+	case models.ServiceMsgg:
+		m, cmd := m.ServiceMessage(msg)
+		return m, cmd
 	case models.ServerMsg:
-		switch msg.Text.Service {
+		switch msg.Service.Type {
 		case "HandServer":
 			if UserConnection := m.getConnByAddr(msg.Conn.RemoteAddr()); UserConnection != nil {
-				UserConnection.UserName = msg.Text.Msg
-				cmd = m.Main.ConnList.InsertItem(UserConnection.Id, models.Item{Name: UserConnection.UserName})
+				UserConnection.UserName = msg.Service.Msg
+				cmd = m.ConnList.InsertItem(UserConnection.Id, models.Item{Name: UserConnection.UserName})
 				return m, cmd
 			}
 		case "PrepareUser":
 			UserInit(&msg.Conn, m)
 			return m, cmd
 		case "ConnTimeout":
-			m.Connect.Name = textColor(msg.Text.Msg, "#b82424ff")
+			m.UserConnect.Header = textColor(msg.Service.Msg, "#b82424ff")
 			return m, nil
 		case "call":
 			md := m.commandCalls(msg)
 			return md, nil
-		default:
+		case "Message":
 			if UserConnection := m.getConnByAddr(msg.Conn.RemoteAddr()); UserConnection != nil {
 				UserConnection.UnReadMsg += 1
-				wrappedMsg := wrapMessage(splitText(UserConnection.UserName, msg.Text.Msg, UserConnection.ViewPort.Width), UserConnection.ViewPort.Width)
+				wrappedMsg := wrapMessage(splitText(UserConnection.UserName, msg.Service.Msg, UserConnection.ViewPort.Width), UserConnection.ViewPort.Width)
 				UserConnection.Msg = append(UserConnection.Msg, textColor(wrappedMsg, "#ac7cb9ff"))
 				UserConnection.ViewPort.SetContent(strings.Join(UserConnection.Msg, "\n"))
 				UserConnection.ViewPort.GotoBottom()
-				if m.Main.ConnList.Cursor() != UserConnection.Id-1 {
-					cmd = m.Main.ConnList.SetItem(UserConnection.Id-1, models.Item{Name: fmt.Sprintf("%s [%d]", UserConnection.UserName, UserConnection.UnReadMsg)})
+				if m.ConnList.Cursor() != UserConnection.Id-1 {
+					cmd = m.ConnList.SetItem(UserConnection.Id-1, models.Item{Name: fmt.Sprintf("%s [%d]", UserConnection.UserName, UserConnection.UnReadMsg)})
 					return m, cmd
 				}
 				UserConnection.UnReadMsg = 0
-				cmd = m.Main.ConnList.SetItem(UserConnection.Id-1, models.Item{Name: UserConnection.UserName})
+				cmd = m.ConnList.SetItem(UserConnection.Id-1, models.Item{Name: UserConnection.UserName})
 			}
 			return m, cmd
 		}
@@ -73,17 +76,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			//accept input from user
 		case "enter":
 			//Get user name from textinput
-			if m.Hello.IsEditing {
-				n := m.Hello.TextInput.Value()
+			if m.HelloScreen {
+				n := m.TextInput.Value()
 				m.Username = &n
-				m.Tcp.Name = &n
-				m.Hello.TextInput.Reset()
-				m.Hello.IsEditing = false
+				m.Peer.Tcp.Name = &n
+				m.TextInput.Reset()
+				m.HelloScreen = false
 				return m, nil
 			}
 			//connect to user
-			if m.Main.MainList.Cursor() == 0 {
-				m.Connect.Name = textColor(m.SelectedLang.Connectig, "#b18f30ff")
+			if m.MainList.Cursor() == 0 {
+				m.UserConnect.Name = textColor(m.Language.SelectedLang.Connectig, "#b18f30ff")
 				go ConnectUser(m)
 				return m, nil
 			}
@@ -109,7 +112,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			move(m, msg)
 			if conn := getConn(m); conn != nil {
 				conn.UnReadMsg = 0
-				m.Main.ConnList.SetItem(conn.Id-1, models.Item{Name: conn.UserName})
+				m.ConnList.SetItem(conn.Id-1, models.Item{Name: conn.UserName})
 				conn.ViewPort.SetContent(strings.Join(conn.Msg, "\n"))
 			}
 			return m, nil
@@ -121,7 +124,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					conn.ViewPort.ScrollUp(1)
 				}
 			case SettingsIdx:
-				m.langScroll(m.LangIdx-1, false)
+				m.langScroll(m.Language.LangIdx-1, false)
 				return m, nil
 			}
 			//scroll down message list
@@ -132,7 +135,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					conn.ViewPort.ScrollDown(1)
 				}
 			case SettingsIdx:
-				m.langScroll(m.LangIdx+1, true)
+				m.langScroll(m.Language.LangIdx+1, true)
 			}
 			return m, nil
 			//close app
@@ -144,29 +147,41 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return check(m, msg)
 }
 
-func (m *Model) langScroll(idx int, move bool) {
-	if m.SettingsList.Index() == 1 {
-		if move {
-			m.Main.LangList.CursorDown()
-		} else {
-			m.Main.LangList.CursorUp()
+func (m *Model) ServiceMessage(msg models.ServiceMsgg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	switch msg := msg.(type) {
+	case models.HandShake:
+		if UserConnection := m.getConnByAddr(msg.Conn.RemoteAddr()); UserConnection != nil {
+			UserConnection.UserName = msg.Data
+			cmd = m.ConnList.InsertItem(UserConnection.Id, models.Item{Name: UserConnection.UserName})
+			return m, cmd
 		}
-		n := m.LangList.SelectedItem().FilterValue()
-		for _, i := range m.Language {
-			if i.Language == n {
-				if idx >= len(m.LangList.Items()) {
-					return
-				}
-				if idx <= -1 {
-					return
-				}
-				m.LangIdx = idx
-				m.SelectedLang = i
-				m.LangUpd = true
-				m.SetupLang()
-				m.LangList.Select(m.LangIdx)
-				return
+	case models.PrepareUser:
+		UserInit(&msg.Conn, m)
+		return m, cmd
+	case models.ConnTimeout:
+		m.UserConnect.Header = textColor(msg.Data, "#b82424ff")
+		return m, nil
+	case models.CallAction:
+		//	md := m.commandCalls(msg)
+		//return md, nil
+	case models.TimerCount:
+		fmt.Println()
+	case models.Message:
+		if UserConnection := m.getConnByAddr(msg.Conn.RemoteAddr()); UserConnection != nil {
+			UserConnection.UnReadMsg += 1
+			wrappedMsg := wrapMessage(splitText(UserConnection.UserName, msg.Data, UserConnection.ViewPort.Width), UserConnection.ViewPort.Width)
+			UserConnection.Msg = append(UserConnection.Msg, textColor(wrappedMsg, "#ac7cb9ff"))
+			UserConnection.ViewPort.SetContent(strings.Join(UserConnection.Msg, "\n"))
+			UserConnection.ViewPort.GotoBottom()
+			if m.ConnList.Cursor() != UserConnection.Id-1 {
+				cmd = m.ConnList.SetItem(UserConnection.Id-1, models.Item{Name: fmt.Sprintf("%s [%d]", UserConnection.UserName, UserConnection.UnReadMsg)})
+				return m, cmd
 			}
+			UserConnection.UnReadMsg = 0
+			cmd = m.ConnList.SetItem(UserConnection.Id-1, models.Item{Name: UserConnection.UserName})
 		}
+		return m, cmd
 	}
+	return m, nil
 }

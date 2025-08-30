@@ -29,29 +29,18 @@ func (t *Tcp) Connect(addr string) (*net.Conn, error) {
 	if err != nil {
 		return &conn, err
 	}
-	go t.ClienthandleRequest(conn)
-	return &conn, err
-}
 
-func (t *Tcp) ClienthandleRequest(conn net.Conn) {
-	defer conn.Close()
-	scanner := bufio.NewScanner(conn)
-	msg := models.ServerMsg{Conn: conn}
-	for scanner.Scan() {
-		var s models.ServiceMsg
-		err := json.Unmarshal(scanner.Bytes(), &s)
-		if err != nil {
-			fmt.Println("error unmarshaling message")
-			return
-		}
-		msg.Text = s
+	f := func(conn *net.Conn, msg models.ServerMsg) {
 		t.Programm.Send(msg)
 	}
+
+	go t.handleRequest(&conn, f)
+	return &conn, err
 }
 
 func (t *Tcp) SendMsg(c *net.Conn, text, service string) {
 	conn := *c
-	msg := models.ServiceMsg{Service: service, Msg: text}
+	msg := models.ServiceMsg{Type: service, Msg: text}
 	b, err := json.Marshal(msg)
 	if err != nil {
 		fmt.Println("error marshaling message", err.Error())
@@ -75,13 +64,24 @@ func (t *Tcp) RunServers() {
 				fmt.Println("Error listening:", err.Error())
 				return
 			}
-			t.Programm.Send(models.ServerMsg{Conn: conn, Text: models.ServiceMsg{Service: "PrepareUser"}})
-			go t.ServerhandleRequest(&conn)
+
+			t.Programm.Send(models.ServerMsg{Conn: conn, Service: models.ServiceMsg{Type: "PrepareUser"}})
+
+			f := func(conn *net.Conn, msg models.ServerMsg) {
+				if msg.Service.Type == "HandServer" {
+					t.SendMsg(conn, *t.Name, "HandServer")
+				}
+
+				t.Programm.Send(msg)
+
+				t.Programm.Send(models.TimerCount{Data: *t.Name})
+			}
+			go t.handleRequest(&conn, f)
 		}
 	}()
 }
 
-func (t *Tcp) ServerhandleRequest(conn *net.Conn) {
+func (t *Tcp) handleRequest(conn *net.Conn, f func(conn *net.Conn, msg models.ServerMsg)) {
 	scanner := bufio.NewScanner(*conn)
 	msg := models.ServerMsg{Conn: *conn}
 	for scanner.Scan() {
@@ -91,11 +91,11 @@ func (t *Tcp) ServerhandleRequest(conn *net.Conn) {
 			fmt.Println("error unmarshaling message")
 			return
 		}
-		msg.Text = s
-		if s.Service == "HandServer" {
-			t.SendMsg(conn, *t.Name, "HandServer")
+		msg.Service = s
+		if msg.Service.Type == "" {
+			msg.Service.Type = "Message"
 		}
-		t.Programm.Send(msg)
+		f(conn, msg)
 	}
 
 }

@@ -27,11 +27,10 @@ func main() {
 	}
 
 	m = ui.Model{
-		LangIdx:  0,
-		Language: lang,
-		Hello:    models.Hello{IsEditing: true},
-		Connect:  models.Connect{TextInput: textinput.New(), IsEditing: false},
-		Program:  p,
+		Language:    models.Lang{LangIdx: 0, Language: lang},
+		HelloScreen: true,
+		UserConnect: models.UserConnect{TextInput: textinput.New(), IsEditing: false},
+		Program:     p,
 		Peer: peer.Peer{
 			Tcp: peer.Tcp{
 				Port:     cfg.TCP.Port,
@@ -40,7 +39,7 @@ func main() {
 	}
 	m.LangInit()
 	if len(os.Args) != 1 {
-		m.Tcp.RunServers()
+		m.Peer.Tcp.RunServers()
 	}
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error:", err)
@@ -48,3 +47,10 @@ func main() {
 	}
 
 }
+
+/*
+сделать выбор микрофона и наушников
+сделать отключение от чата
+сделать звонки
+в звонках сделать таймер
+*/

@@ -1,38 +1,44 @@
 package models
 
 import (
+	"main/inernal/localization"
 	"net"
 
-	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 )
 
+// Сообщения из пакетов в update bubbletea
 type ServerMsg struct {
-	Conn net.Conn
-	Text ServiceMsg
+	Conn    net.Conn
+	Service ServiceMsg
+	Msg     string
 }
 
 type ServiceMsg struct {
-	Service string
-	Msg     string
+	Type string
+	Msg  string
+}
+
+type UserMessage struct {
+	Message     string
+	IsHandShake bool
 }
 
 func (s *ServiceMsg) SetValue(msg, service string) {
 	s.Msg = msg
-	s.Service = service
+	s.Type = service
 }
 
+// Структура звонка
 type Call struct {
 	InCall   bool
 	FromCall bool
 	ToCall   bool
 	Conn     *net.Conn
 	Name     string
-}
-
-type Connections struct {
-	List []*Conn
+	Timer    int
+	TimerOn  chan struct{}
 }
 
 type Conn struct {
@@ -46,27 +52,20 @@ type Conn struct {
 	UnReadMsg uint
 }
 
-type Hello struct {
-	TextInput textinput.Model
-	IsEditing bool
-}
-
-type Main struct {
-	MainList     list.Model
-	ConnList     list.Model
-	SettingsList list.Model
-
-	LangList list.Model
-	Screen   uint
-	Err      bool
-}
-
-type Connect struct {
+type UserConnect struct {
 	Header    string
 	TextInput textinput.Model
 	IsEditing bool
 	Name      string
 	List      []*Conn
+}
+
+type Lang struct {
+	Language     []localization.Lang
+	Langs        []string
+	SelectedLang localization.Lang
+	LangIdx      int
+	LangUpd      bool
 }
 
 type Item struct {

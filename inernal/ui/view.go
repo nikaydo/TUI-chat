@@ -7,71 +7,55 @@ import (
 )
 
 func (m *Model) View() string {
-	if m.Hello.IsEditing {
-		m.Hello.TextInput.Placeholder = m.SelectedLang.EntryInput
-		return column(textColor(m.SelectedLang.EntryLabel, "#9d9e49ff"), m.Hello.TextInput.View())
+	if m.HelloScreen {
+		m.TextInput.Placeholder = m.Language.SelectedLang.EntryInput
+		return column(textColor(m.Language.SelectedLang.EntryLabel, "#9d9e49ff"), m.TextInput.View())
 	}
-	if m.Screen == SettingsIdx {
-		if m.LangUpd {
+	if m.Screen == SettingsIdx && m.Language.LangUpd || m.SettingsList.Index() == 1 {
+		return m.ExampleScreen(m.SettingsList.View(), m.SelectLang(), "main", false)
 
-			return m.vert(lipgloss.JoinHorizontal(
-				lipgloss.Top,
-				MainStyle(panelWidth-10, panelHeight-4).BorderRight(false).Render(m.Main.SettingsList.View()),
-				SelectLang(m)), InfoBar.Render(m.MakeHelpBar("main")))
-		}
-		switch m.Main.SettingsList.Index() {
-		case 1:
-			return m.vert(lipgloss.JoinHorizontal(
-				lipgloss.Top,
-				MainStyle(panelWidth-10, panelHeight-4).BorderRight(false).Render(m.Main.SettingsList.View()),
-				SelectLang(m)), InfoBar.Render(m.MakeHelpBar("main")))
-		}
 	}
-	if m.Main.MainList.Index() == 0 {
-		return m.vert(lipgloss.JoinHorizontal(
-			lipgloss.Top,
-			MainStyle(panelWidth-10, panelHeight-4).BorderRight(false).Render(m.Main.MainList.View()),
-			ConnPanel(m)), InfoBar.Render(m.MakeHelpBar("main")))
+	if m.MainList.Index() == 0 {
+		return m.ExampleScreen(m.MainList.View(), m.ConnPanel(), "main", false)
 	}
-	return screen(m)
+	return m.screen()
 }
 
-func (m *Model) vert(str, Info string) string {
+func (m *Model) IfCall(str, Info string) string {
 	var call string
 	if m.Call.FromCall {
-		call = GetCall(m.Call.Name)
+		call = m.GetCall(m.Call.Name)
 	}
 	if m.Call.ToCall {
-		call = ToCall(m.Call.Name)
+		call = m.ToCall(m.Call.Name)
 	}
 	if m.Call.InCall {
-		call = Calling(m.Call.Name)
+		call = m.Calling(m.Call.Name)
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, lipgloss.JoinHorizontal(
 		lipgloss.Top, str, call), Info)
 }
 
-func screen(m *Model) string {
+func (m *Model) screen() string {
 	switch m.Screen {
 	case MainIdx:
-		return m.ExampleScreen(m.Main.MainList.View(), "main")
+		return m.ExampleScreen(m.MainList.View(), "", "main", true)
 	case SettingsIdx:
-		return m.ExampleScreen(m.Main.SettingsList.View(), "chat")
-
+		return m.ExampleScreen(m.SettingsList.View(), "", "chat", true)
 	}
 
-	if m.Main.ConnList.Cursor() == 0 {
-		return m.ExampleScreen(m.Main.ConnList.View(), "chat")
+	if m.ConnList.Cursor() == 0 {
+		return m.ExampleScreen(m.ConnList.View(), "", "chat", true)
 	}
 	var conn models.Conn
-	for _, i := range m.Connect.List {
-		if i.Id == m.Main.ConnList.Cursor()+1 {
+	for _, i := range m.UserConnect.List {
+		if i.Id == m.ConnList.Cursor()+1 {
 			conn = *i
 			break
 		}
 	}
 	if conn.Conn == nil {
-		return m.ExampleScreen(m.Main.ConnList.View(), "chat")
+		return m.ExampleScreen(m.ConnList.View(), "", "chat", true)
 	}
 
 	return m.MainScreen(&conn)

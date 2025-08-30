@@ -31,6 +31,12 @@ type Lang struct {
 	ConnectError     string `yaml:"connectError"`
 	ConnectSucessful string `yaml:"connectSucessful"`
 	ConnectTimeout   string `yaml:"connectTimeout"`
+
+	CallWith   string `yaml:"CallWith"`
+	CallFrom   string `yaml:"CallFrom"`
+	CallTo     string `yaml:"CallTo"`
+	CallEnd    string `yaml:"CallEnd"`
+	CallCancel string `yaml:"CallCancel"`
 }
 
 func LangRead(path string) ([]Lang, error) {
@@ -50,6 +56,7 @@ func LangRead(path string) ([]Lang, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		langs = append(langs, l)
 	}
 	if len(langs) == 0 {
@@ -96,5 +103,11 @@ func defaultLang() Lang {
 		ConnectError:     "Подлкючение...",
 		ConnectSucessful: "Ошибка подлкючения",
 		ConnectTimeout:   "Подлкючение к пользовтелю заняло слишком много времени",
+
+		CallWith:   "Звонок с",
+		CallFrom:   "Звоним:",
+		CallTo:     "Звонок от",
+		CallEnd:    "Закончить:",
+		CallCancel: "Отклонить:",
 	}
 }

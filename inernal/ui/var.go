@@ -2,6 +2,7 @@ package ui
 
 import (
 	"main/inernal/models"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -43,23 +44,23 @@ var (
 func MainStyle(w, h int) lipgloss.Style {
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#3e3963")). // мягкий голубой
+		BorderForeground(lipgloss.Color("#3e3963")).
 		Width(w).
 		Height(h).
 		Padding(1, 1)
 
 }
 
-func ConnPanel(m *Model) string {
+func (m *Model) ConnPanel() string {
 	title := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#3b6380")).
-		Render(m.Connect.Name)
+		Render(m.UserConnect.Header)
 	return MainStyle(panelWidth, panelHeight).Render(
 		lipgloss.JoinVertical(
 			lipgloss.Top,
 			title,
-			m.Connect.TextInput.View(),
+			m.UserConnect.TextInput.View(),
 		),
 	)
 }
@@ -70,26 +71,26 @@ func textColor(text, color string) string {
 
 }
 
-func Calling(name string) string {
-	ct := lipgloss.JoinVertical(lipgloss.Center, "Call with", name, lipgloss.JoinHorizontal(lipgloss.Center,
-		"end call: ",
-		textColor("ctrl+n", "#a01717ff")))
+func (m *Model) Calling(name string) string {
 
+	ct := lipgloss.JoinVertical(lipgloss.Center, m.Language.SelectedLang.CallWith, name, strconv.Itoa(m.Call.Timer), lipgloss.JoinHorizontal(lipgloss.Center,
+		m.Language.SelectedLang.CallEnd,
+		textColor("ctrl+n", "#a01717ff")))
 	return callPanel.Render(ct)
 }
 
-func GetCall(name string) string {
-	return callPanel.Render(lipgloss.JoinVertical(lipgloss.Center, "Call from", name,
+func (m *Model) GetCall(name string) string {
+	return callPanel.Render(lipgloss.JoinVertical(lipgloss.Center, m.Language.SelectedLang.CallFrom, name,
 		lipgloss.JoinHorizontal(lipgloss.Center,
 			textColor("ctrl+y", "#0d881dff"),
 			textColor(" // ", "#474747ff"),
 			textColor("ctrl+n", "#a01717ff"))))
 }
 
-func ToCall(name string) string {
-	return callPanel.Render(lipgloss.JoinVertical(lipgloss.Center, "Call to", name,
+func (m *Model) ToCall(name string) string {
+	return callPanel.Render(lipgloss.JoinVertical(lipgloss.Center, m.Language.SelectedLang.CallTo, name,
 		lipgloss.JoinHorizontal(lipgloss.Center,
-			"Press to cancel:",
+			m.Language.SelectedLang.CallCancel,
 			textColor("ctrl+n", "#a01717ff"))))
 }
 
@@ -114,36 +115,65 @@ func chatPanel(conn *models.Conn) string {
 	))
 }
 
-func SelectLang(m *Model) string {
+func (m *Model) SelectLang() string {
 	style := MainStyle(panelWidth, panelHeight)
-
-	return style.Render(lipgloss.JoinVertical(lipgloss.Center, m.Main.LangList.View()))
+	return style.Render(lipgloss.JoinVertical(lipgloss.Center, m.LangList.View()))
 }
 
 func column(strs ...string) string {
 	return lipgloss.JoinVertical(lipgloss.Left, strs...)
 }
 
-func (m *Model) ExampleScreen(list, bar string) string {
-	return m.vert(lipgloss.JoinHorizontal(
+func (m *Model) ExampleScreen(list, left, bar string, right bool) string {
+	main := MainStyle(
+		panelWidth-10,
+		panelHeight-4,
+	).BorderRight(right)
+
+	return m.IfCall(lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		MainStyle(
-			panelWidth-10,
-			panelHeight-4).
-			Render(
-				list)),
+		main.Render(list),
+		left),
 		InfoBar.Render(m.MakeHelpBar(bar)))
+
 }
 
 func (m *Model) MainScreen(conn *models.Conn) string {
-	return m.vert(lipgloss.JoinHorizontal(
+	return m.IfCall(lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		MainStyle(
 			panelWidth-10,
 			panelHeight-4).
 			BorderRight(false).
 			Render(
-				m.Main.ConnList.View()),
+				m.ConnList.View()),
 		chatPanel(conn)),
 		InfoBar.Render(m.MakeHelpBar("chat")))
+}
+
+func (m *Model) langScroll(idx int, move bool) {
+	if m.SettingsList.Index() == 1 {
+		if move {
+			m.LangList.CursorDown()
+		} else {
+			m.LangList.CursorUp()
+		}
+		n := m.LangList.SelectedItem().FilterValue()
+		for _, i := range m.Language.Language {
+			if i.Language == n {
+				if idx >= len(m.LangList.Items()) {
+					return
+				}
+				if idx <= -1 {
+					return
+				}
+				m.Language.LangIdx = idx
+				m.Language.SelectedLang = i
+				m.Language.LangUpd = true
+				m.SetupLang()
+				m.LangList.Select(m.Language.LangIdx)
+				return
+			}
+		}
+	}
 }
